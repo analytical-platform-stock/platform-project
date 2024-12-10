@@ -31,10 +31,6 @@
 5. Сургутнефтегаз
 6. Татнефть
 
-## License
-
-Проект распространяется по лицензии MIT
-
 ## Developers
 
 **Участники**:
@@ -47,3 +43,5 @@
 - Качкин Дмитрий — [@KachkinDmitrii](https://t.me/KachkinDmitrii), [Dmitry426](https://github.com/Dmitry426)
 
 ## License
+
+Проект распространяется по лицензии MIT
