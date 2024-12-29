@@ -28,15 +28,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Глобальные переменные для моделей
+# Переменные для моделей
 models = {}
 active_model_id = None
-
-# Pydantic-модели
-# class Hyperparameters(BaseModel):
-#     test_size: float = Field(..., gt=0, lt=1, description="Доля данных для тестовой выборки (0 < test_size < 1)")
-#     random_state: int = Field(..., ge=0, description="Случайное состояние для воспроизводимости")
-
 
 class ModelInfo(BaseModel):
     id: str
@@ -129,7 +123,7 @@ def predict(file: UploadFile = File(...)):
 
 
 def train_linear_regression(file_path: str, model_id: str, test_size=0.15, lag_start=1, lag_end=2):
-    """Процесс обучения линейной регрессии"""
+    """Процесс обучения модели"""
     logger.info(f"Начало обучения модели {model_id}")
     try:
         # Загружаем данные из CSV
@@ -147,14 +141,7 @@ def train_linear_regression(file_path: str, model_id: str, test_size=0.15, lag_s
         for i in range(lag_start, lag_end):
             data[f"lag_{i}"] = data['close'].shift(i)
         data = data.dropna()
-        #data['day'] = data.index.day
-        #data['hour'] = data.index.hour
 
-        #data = data.dropna()
-        # выкидываем закодированные средними признаки
-        #data.drop(["day"], axis=1, inplace=True)
-        # выкидываем закодированные средними признаки
-       # data.drop(["hour"], axis=1, inplace=True)
 
         # разбиваем весь датасет на тренировочную и тестовую выборку
         X_train = data.head(math.ceil(int(len(data) * 0.85))).drop(["close"], axis=1)
@@ -171,7 +158,7 @@ def train_linear_regression(file_path: str, model_id: str, test_size=0.15, lag_s
         with open(model_path, "wb") as file:
             pickle.dump(model, file)
 
-        # Обновляем глобальный словарь моделей
+
         models[model_id] = {"model": model, "type": "linear_regression", "company": model_id.split('_')[0]}
 
         logger.info(f"Обучение модели {model_id} завершено")
@@ -182,7 +169,6 @@ def train_linear_regression(file_path: str, model_id: str, test_size=0.15, lag_s
 def fit(
     model_id: str,
     background_tasks: BackgroundTasks,
-    #hyperparameters: Hyperparameters = Body(...),
     file: UploadFile = File(...),
 ):
     """Запуск обучения модели"""
@@ -190,7 +176,6 @@ def fit(
         raise HTTPException(status_code=404, detail="Модель не найдена")
 
 
-    # Сохраняем загруженный файл
     temp_file_path = os.path.join(MODEL_DIRECTORY, f"temp_{model_id}.csv")
     with open(temp_file_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
