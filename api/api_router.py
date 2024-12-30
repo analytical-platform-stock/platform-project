@@ -4,16 +4,21 @@ import pickle
 import shutil
 from sklearn.linear_model import LinearRegression
 from fastapi import APIRouter, FastAPI, HTTPException, BackgroundTasks, File, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from typing import List
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
 from multiprocessing import Process
 import pandas as pd
 import math
-
+from matplotlib import pyplot as plt
+from sklearn.model_selection import learning_curve
+import numpy as np
+import io
+import time
 
 router = APIRouter()
+
 
 # Установка логирования
 LOG_DIR = "logs"
@@ -45,7 +50,7 @@ class PredictionResponse(BaseModel):
     predictions: List[float]
 
 # Загрузка моделей из папки models/
-MODEL_DIRECTORY = "models"
+MODEL_DIRECTORY = "api/models"
 os.makedirs(MODEL_DIRECTORY, exist_ok=True)
 
 def load_models():
@@ -60,6 +65,8 @@ def load_models():
                         "type": model_type,
                         "company": company
                     }
+            else:
+                print(os.getcwd())
 
 def get_model_info():
     return [
@@ -122,6 +129,38 @@ def predict(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail="Ошибка предсказания")
 
 
+def plot_scores(model, model_id, X_train, y_train):
+    train_sizes, train_scores, test_scores = learning_curve(model, X_train, y_train, 
+                                                         train_sizes=np.linspace(0.1, 1.0, 10),
+                                                         scoring='neg_mean_squared_error',
+                                                         cv=5)
+
+    train_scores_mean = -train_scores.mean(axis=1)
+    test_scores_mean = -test_scores.mean(axis=1)
+    train_scores_std = train_scores.std(axis=1)
+    test_scores_std = test_scores.std(axis=1)
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(train_sizes, train_scores_mean, 'o-', color='r', label='Training score')
+    plt.plot(train_sizes, test_scores_mean, 'o-', color='g', label='Cross-validation score')
+
+    plt.fill_between(train_sizes, train_scores_mean - train_scores_std,
+                    train_scores_mean + train_scores_std, alpha=0.1, color='r')
+    plt.fill_between(train_sizes, test_scores_mean - test_scores_std,
+                    test_scores_mean + test_scores_std, alpha=0.1, color='g')
+
+    plt.title('Learning Curve for Linear Regression')
+    plt.xlabel('Training Size')
+    plt.ylabel('Mean Squared Error (MSE)')
+    plt.legend(loc='best')
+    plt.grid()
+
+    model_path = os.path.join(MODEL_DIRECTORY, f"{model_id}_learning_curve.png")
+    plt.savefig(model_path, format='png', dpi=300)  # Указываем разрешение в dpi
+    
+    plt.close()  
+
+
 def train_linear_regression(file_path: str, model_id: str, test_size=0.15, lag_start=1, lag_end=2):
     """Процесс обучения модели"""
     logger.info(f"Начало обучения модели {model_id}")
@@ -152,6 +191,9 @@ def train_linear_regression(file_path: str, model_id: str, test_size=0.15, lag_s
         # Создаем и обучаем модель линейной регрессии
         model = LinearRegression()
         model.fit(X_train, y_train)
+
+        #Создаем и сохраняем графики обучения модели линейной регрессии
+        plot_scores(model, model_id, X_train, y_train)
 
         # Сохраняем обученную модель
         model_path = os.path.join(MODEL_DIRECTORY, f"{model_id}.pkl")
@@ -184,6 +226,14 @@ def fit(
     process = Process(target=train_linear_regression, args=(temp_file_path, model_id))
     process.start()
     background_tasks.add_task(process.join)
-
+    
     return JSONResponse(content={"status": "Запущено обучение"}, status_code=202)
 
+@router.get("/scores")
+def get_scores(model_id: str):
+    pkl_file_path = os.path.join(MODEL_DIRECTORY, f"{model_id}_learning_curve.png")
+
+    if not os.path.isfile(pkl_file_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    return FileResponse(path=pkl_file_path, media_type='image/png', filename=f"{model_id}_learning_curve.png")
