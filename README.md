@@ -30,7 +30,7 @@
 - Управление моделями.
 - Инференс данных.
 
-![Streamlit Demo](path/to/streamlit_demo.gif)
+![Streamlit Demo](docs/streamlit.gif)
 
 ## Types of problems
 
@@ -132,7 +132,7 @@ curl -X POST "http://localhost:8001/predict" -F "file=@data.csv"
 2. Загрузите CSV-файл с данными.
 3. Нажмите кнопку "Выполнить предсказание" и ознакомьтесь с результатами, которые появятся в формате JSON.
 
-![Streamlit Example](path/to/streamlit_example.gif)
+![Streamlit Example](docs/streamlit.gif)
 
 ## Developers
 
