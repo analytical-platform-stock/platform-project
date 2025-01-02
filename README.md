@@ -22,7 +22,7 @@
 - Выполнение предсказаний.
 - Обучение новой модели.
 
-![API Demo](path/to/api_demo.gif)
+![API Demo](docs/api.gif)
 
 ### Streamlit
 - Загрузка датасета.
@@ -113,7 +113,7 @@ curl -X POST "http://localhost:8001/predict" -F "file=@data.csv"
   "predictions": [123.45, 678.90]
 }
 ```
-![API Example](path/to/api_example.gif)
+![API Example](docs/api.gif)
 
 ### Работа Streamlit
 
