@@ -73,6 +73,7 @@
    ```bash
    docker-compose up --build
    ```
+   ![Docker-compose diagram](docs/docker_compose_diagram.png)
    ![Docker Example](docs/docker.gif)
 
 5. Проверьте, что все сервисы работают корректно. Для этого можно зайти на:
