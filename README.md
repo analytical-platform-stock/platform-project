@@ -73,6 +73,7 @@
    ```bash
    docker-compose up --build
    ```
+   ![Docker Example](path/to/docs/docker.gif)
 
 5. Проверьте, что все сервисы работают корректно. Для этого можно зайти на:
    - FastAPI: [http://localhost:8001](http://localhost:8001)
